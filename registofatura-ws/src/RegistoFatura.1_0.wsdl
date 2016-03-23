@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+    Contrato WSDL do serviço RegistoFatura
+
+    Este WSDL define as operações disponibilizadas pelo Web Service,
+    e não pode ser modificado.
+
+    Para mais informação, consultar secções 
+    wsdl:service, wsdl:portType, wsdl:types e wsdl:binding
+
+    Versão 1.0
+
+    Histórico:
+    1.0 - 2014-03-14 - versão inicial
+-->
+<wsdl:definitions name="RegistoFaturaService"
+    targetNamespace="urn:pt:registofatura:ws"
+    xmlns:tns="urn:pt:registofatura:ws"
+    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+    xmlns:soaphttp="http://schemas.xmlsoap.org/soap/http"
+    xmlns:wsamd="http://www.w3.org/2007/05/addressing/metadata">
+
+    <wsdl:types>
+        <!--
+            Definições dos tipos de dados
+        -->
+        <xs:schema attributeFormDefault="unqualified" elementFormDefault="unqualified"
+            targetNamespace="urn:pt:registofatura:ws">
+
+			<!-- Item de fatura, que inclui:
+				- Descrição do servico ou produto
+				- Quantidade
+				- Preço total (quantidade x preco unitário incluindo IVA) 
+			-->			
+			<xs:complexType name="itemFatura">
+				<xs:sequence>
+		            <xs:element name="descricao" type="xs:string"/>
+		            <xs:element name="quantidade" type="xs:int"/>
+		            <xs:element name="preco" type="xs:int"/>
+		        </xs:sequence>
+		    </xs:complexType>    
+		          
+		    <!-- Fatura é um documento que inclui:
+		    	- Data de emissão
+		    	- Identificador da fatura, composto pelo par 
+		    		(Número de sequência, número da série)
+		    	- NIF e nome do emissor da fatura
+		    	- NIF do cliente (opcional)
+		    	- Lista de 1 ou mais itens
+		    	- Total cobrado de IVA
+		    	- Total da fatura (inclui total de IVA)
+		    	 -->  
+		    <xs:complexType name="fatura">
+		        <xs:sequence>
+		            <xs:element name="data" type="xs:dateTime"/>
+		            <xs:element name="numSeqFatura" type="xs:int"/>
+		            <xs:element name="numSerie" type="xs:int"/>
+		            <xs:element name="nifEmissor" type="xs:int"/>
+		            <xs:element name="nomeEmissor" type="xs:string"/>
+		            <xs:element name="nifCliente" type="xs:int" minOccurs="0"/>
+		            <xs:element name="itens" type="tns:itemFatura" minOccurs="1" maxOccurs="unbounded"/>
+		            <xs:element name="iva" type="xs:int"/>
+		            <xs:element name="total" type="xs:int"/>
+		            </xs:sequence>
+		    </xs:complexType>
+		    
+		    <xs:complexType name="serie">
+		        <xs:sequence>
+					<xs:element name="numSerie" type="xs:int"/>
+                    <xs:element name="validoAte" type="xs:dateTime"/>		            
+                </xs:sequence>
+		    </xs:complexType>
+
+            <!--
+                O pedido da operação 'pedirSerie' recebe o NIF que identifica 
+                a entidade emissora
+            -->
+            <xs:element name="pedirSerie" type="tns:pedirSerie" />
+            <xs:complexType name="pedirSerie">
+                <xs:sequence>
+                    <xs:element name="nifEmissor" type="xs:int"/>
+                </xs:sequence>
+            </xs:complexType>
+            
+            
+            <!--
+                A resposta normal da operação 'pedirSerie'
+                devolve o número da nova série de faturas atribuída ao emissor
+                e a data de validade respetiva.
+            -->
+            <xs:element name="pedirSerieResponse" type="tns:pedirSerieResponse" />
+            <xs:complexType name="pedirSerieResponse">
+                <xs:sequence>
+                    <xs:element name="serie" type="tns:serie"/>
+                </xs:sequence>
+            </xs:complexType>
+
+            <!--
+                O pedido da operação 'comunicarFatura' recebe uma fatura
+            -->
+		    <xs:element name="comunicarFatura" type="tns:fatura" />
+		    
+            <!--
+                A resposta normal da operação 'comunicarFatura' não devolve nada.
+            -->
+
+            <!--
+                O pedido da operação 'listarFacturas' recebe:
+                - o NIF do emissor cujas faturas se pretende consultar
+                	(caso vazio, significa que se pretendem considerar todos os emissores)
+                - o NIF do cliente cujas faturas se pretende consultar
+                	(caso vazio, significa que se pretendem considerar todos os clientes)
+            -->
+		    <xs:element name="listarFacturas" type="tns:listarFacturas" />
+		    <xs:complexType name="listarFacturas">
+		        <xs:sequence>
+		            <xs:element name="nifEmissor" type="xs:int" minOccurs="0" />
+		            <xs:element name="nifCliente" type="xs:int" minOccurs="0" />
+		        </xs:sequence>
+		    </xs:complexType>
+            <!--
+                A resposta normal da operação 'listarFacturas' é
+                uma lista de faturas que cumprem as condições de pesquisa indicadas
+            -->
+            <xs:element name="listarFacturasResponse" type="tns:listarFacturasResponse" />
+            <xs:complexType name="listarFacturasResponse">
+                <xs:sequence>
+                    <xs:element name="fatura" type="tns:fatura" minOccurs="0" maxOccurs="unbounded" />
+                </xs:sequence>
+            </xs:complexType>
+
+            <!--
+                O pedido da operação 'consultarIVADevido' recebe:
+                - o NIF do emissor em causa
+                - o ano a consultar
+            -->
+		    <xs:element name="consultarIVADevido" type="tns:consultarIVADevido" />
+		    <xs:complexType name="consultarIVADevido">
+		        <xs:sequence>
+		            <xs:element name="nifEmissor" type="xs:int" />
+		            <xs:element name="ano" type="xs:gYear" />
+		        </xs:sequence>
+		    </xs:complexType>
+            <!--
+                A resposta normal da operação 'consultarIVADevido'
+                devolve o valor total do IVA das faturas comunicadas no ano indicado.
+            -->
+		    <xs:element name="consultarIVADevidoResponse" type="tns:consultarIVADevidoResponse" />
+		    <xs:complexType name="consultarIVADevidoResponse">
+		        <xs:sequence>
+		            <xs:element name="ivaDevido" type="xs:int" />
+		        </xs:sequence>
+		    </xs:complexType>
+
+
+           <!--
+                A resposta de erro 'EmissorInexistente'
+                indica que o emissor de faturas indicado não existe.
+            -->
+		    <xs:element name="EmissorInexistente" type="tns:EmissorInexistente" />
+		    <xs:complexType name="EmissorInexistente">
+		        <xs:sequence>
+		            <xs:element name="mensagem" type="xs:string" minOccurs="0" />
+		            <xs:element name="nif" type="xs:int"  />
+		        </xs:sequence>
+		    </xs:complexType>
+
+           <!--
+                A resposta de erro 'ClienteInexistente'
+                indica que não existe cliente com o NIF indicado.
+            -->
+		    <xs:element name="ClienteInexistente" type="tns:ClienteInexistente" />
+		    <xs:complexType name="ClienteInexistente">
+		        <xs:sequence>
+		            <xs:element name="mensagem" type="xs:string" minOccurs="0" />
+		            <xs:element name="nif" type="xs:int" />
+		        </xs:sequence>
+		    </xs:complexType>
+
+           <!--
+                A resposta de erro 'FaturaInvalida'
+                indica que a fatura comunicada é inválida (por diferentes razões possíveis - ver abaixo).
+            -->
+		    <xs:element name="FaturaInvalida" type="tns:FaturaInvalida" />
+		    <xs:complexType name="FaturaInvalida">
+		        <xs:sequence>
+		       		<xs:element name="mensagem" type="xs:string" minOccurs="0" />
+		            <xs:element name="numSeqFatura" type="xs:int" />
+		            <xs:element name="numSerie" type="xs:int" />
+		        </xs:sequence>
+		    </xs:complexType>
+		
+            <!--
+                A resposta de erro 'TotaisIncoerentes'
+                indica que os totais indicados na fatura não estão coerentes com os itens
+                e/ou a taxa de IVA em vigor
+            -->
+		    <xs:element name="TotaisIncoerentes" type="tns:TotaisIncoerentes" />
+		    <xs:complexType name="TotaisIncoerentes">
+		        <xs:sequence>
+		            <xs:element name="razao" type="xs:string" minOccurs="0" />
+		        </xs:sequence>
+		    </xs:complexType>
+
+        </xs:schema>
+    </wsdl:types>
+
+    <!--
+        As mensagens referenciam os elementos definidos no xs:schema
+    -->
+    <wsdl:message name="pedirSerie">
+        <wsdl:part name="parameters" element="tns:pedirSerie" />
+    </wsdl:message>
+    <wsdl:message name="pedirSerieResponse">
+        <wsdl:part name="parameters" element="tns:pedirSerieResponse" />
+    </wsdl:message>
+
+    <wsdl:message name="comunicarFatura">
+        <wsdl:part name="parameters" element="tns:comunicarFatura" />
+    </wsdl:message>
+    <wsdl:message name="comunicarFaturaResponse" />
+
+    <wsdl:message name="listarFacturas">
+        <wsdl:part name="parameters" element="tns:listarFacturas" />
+    </wsdl:message>
+    <wsdl:message name="listarFacturasResponse">
+        <wsdl:part name="parameters" element="tns:listarFacturasResponse" />
+    </wsdl:message>
+
+    <wsdl:message name="consultarIVADevido">
+        <wsdl:part name="parameters" element="tns:consultarIVADevido" />
+    </wsdl:message>
+    <wsdl:message name="consultarIVADevidoResponse">
+        <wsdl:part name="parameters" element="tns:consultarIVADevidoResponse" />
+    </wsdl:message>
+
+    <wsdl:message name="EmissorInexistente">
+        <wsdl:part name="fault" element="tns:EmissorInexistente" />
+    </wsdl:message>
+    <wsdl:message name="ClienteInexistente">
+        <wsdl:part name="fault" element="tns:ClienteInexistente" />
+    </wsdl:message>
+    <wsdl:message name="FaturaInvalida">
+        <wsdl:part name="fault" element="tns:FaturaInvalida" />
+    </wsdl:message>
+    <wsdl:message name="TotaisIncoerentes">
+        <wsdl:part name="fault" element="tns:TotaisIncoerentes" />
+    </wsdl:message>
+
+
+    <!--
+        Definição das operações do serviço
+    -->
+    <wsdl:portType name="RegistoFaturaPortType">
+        <!--
+            Solicita uma nova série de faturas, a emitir pelo 
+            restaurante identificado por NIFEmissor, a partir do 
+            momento em que o pedido é feito.
+
+            Se o restaurante indicado não existir,
+            deve ser devolvido o erro tns:EmissorInexistente.
+        -->
+        <wsdl:operation name="pedirSerie">
+            <wsdl:input message="tns:pedirSerie" name="pedirSerie" />
+            <wsdl:output message="tns:pedirSerieResponse" name="pedirSerieResponse" />
+            <wsdl:fault message="tns:EmissorInexistente" name="EmissorInexistente" />
+        </wsdl:operation>
+
+        <!--
+            A operação 'comunicarFatura' comunica uma fatura já emitida.
+
+            Se o emissor ou cliente não existirem,
+            deve ser devolvido o erro EmissorInexistente ou ClienteInexistente (resp.).
+            Se os totais estão incoerentes com os itens, deve ser devolvido
+            o erro TotaisIncoerentes.
+            Se a fatura já tinha sido antes comunicada, a série não existir, a data da 
+            fatura estiver inválida (fora da validade da série de faturas
+            a que a fatura pertence ou violando a ordem de datas de outras faturas já
+            comunicadas para a mesma série), deve ser devolvido o erro FaturaInvalida.
+        -->
+        <wsdl:operation name="comunicarFatura">
+            <wsdl:input message="tns:comunicarFatura" name="comunicarFatura" />
+            <wsdl:output message="tns:comunicarFaturaResponse" name="comunicarFaturaResponse" />
+            <wsdl:fault message="tns:EmissorInexistente" name="EmissorInexistente" />
+            <wsdl:fault message="tns:ClienteInexistente" name="ClienteInexistente" />
+            <wsdl:fault message="tns:TotaisIncoerentes" name="TotaisIncoerentes" />
+            <wsdl:fault message="tns:FaturaInvalida" name="FaturaInvalida" />
+        </wsdl:operation>
+
+        <!--
+            A operação 'listarFacturas' retorna as faturas comunicadas com o emissor 
+            e o cliente indicados em argumento. 
+            Caso o NIF do Emissor e/ou NIFCliente não sejam passados, então 
+            todos os emissores e/ou clientes (respetivamente) devem ser considerados 
+            na pesquisa.
+
+            Se o emissor ou cliente não existirem,
+            deve ser devolvido o erro EmissorInexistente ou ClienteInexistente (resp.).
+        -->
+        <wsdl:operation name="listarFacturas">
+            <wsdl:input message="tns:listarFacturas" name="listarFacturas" />
+            <wsdl:output message="tns:listarFacturasResponse" name="listarFacturasResponse" />
+            <wsdl:fault message="tns:EmissorInexistente" name="EmissorInexistente" />
+            <wsdl:fault message="tns:ClienteInexistente" name="ClienteInexistente" />
+        </wsdl:operation>
+
+        <!--
+            A operação 'consultarIVADevido' Consulta o total de IVA devido pelo 
+            emissor no ano indicado em argumento. 
+            na pesquisa.
+
+            Se o emissor não existir, deve ser devolvido o erro EmissorInexistente.
+        -->
+        <wsdl:operation name="consultarIVADevido">
+            <wsdl:input message="tns:consultarIVADevido" name="consultarIVADevido" />
+            <wsdl:output message="tns:consultarIVADevidoResponse" name="consultarIVADevidoResponse" />
+            <wsdl:fault message="tns:EmissorInexistente" name="EmissorInexistente" />
+        </wsdl:operation>
+
+
+    </wsdl:portType>
+
+    <!--
+        Vinculação das operações abstractas (descritas em wsdl:portType)
+        e operações concretas.
+        Neste caso, as operações devem ser invocadas através de mensagens SOAP
+        transmitidas sobre o protocolo HTTP (que por sua vez usa TCP/IP)
+    -->
+    <wsdl:binding name="RegistoFaturaServiceSoapBinding" type="tns:RegistoFaturaPortType">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="pedirSerie">
+            <soap:operation soapAction="" />
+            <wsdl:input>
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal" />
+            </wsdl:output>
+            <wsdl:fault name="EmissorInexistente">
+                <soap:fault name="EmissorInexistente" use="literal" />
+            </wsdl:fault>
+        </wsdl:operation>
+        <wsdl:operation name="comunicarFatura">
+            <soap:operation soapAction="" />
+            <wsdl:input>
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal" />
+            </wsdl:output>
+            <wsdl:fault name="EmissorInexistente">
+                <soap:fault name="EmissorInexistente" use="literal" />
+            </wsdl:fault>
+            <wsdl:fault name="ClienteInexistente">
+                <soap:fault name="ClienteInexistente" use="literal" />
+            </wsdl:fault>
+            <wsdl:fault name="FaturaInvalida">
+                <soap:fault name="FaturaInvalida" use="literal" />
+            </wsdl:fault>
+            <wsdl:fault name="TotaisIncoerentes">
+                <soap:fault name="TotaisIncoerentes" use="literal" />
+            </wsdl:fault>
+            
+        </wsdl:operation>
+        <wsdl:operation name="listarFacturas">
+            <soap:operation soapAction="" />
+            <wsdl:input>
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal" />
+            </wsdl:output>
+            <wsdl:fault name="EmissorInexistente">
+                <soap:fault name="EmissorInexistente" use="literal" />
+            </wsdl:fault>
+            <wsdl:fault name="ClienteInexistente">
+                <soap:fault name="ClienteInexistente" use="literal" />
+            </wsdl:fault>
+        </wsdl:operation>
+        <wsdl:operation name="consultarIVADevido">
+            <soap:operation soapAction="" />
+            <wsdl:input>
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal" />
+            </wsdl:output>
+            <wsdl:fault name="EmissorInexistente">
+                <soap:fault name="EmissorInexistente" use="literal" />
+            </wsdl:fault>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <!--
+        RegistoFatura é um Web Service que gere contas de utilizadores 
+        que emitem cheques e que podem endossar os cheques a outros utilizadores.
+        Os cheques podem ser usados como pagamento em restaurantes aderentes ao sistema.
+    -->
+    <wsdl:service name="RegistoFaturaService">
+        <!--
+            O URL abaixo é o endereço por omissão do Web Service.
+            No entanto o serviço pode e deve ser oferecido noutro endereço,
+            que deve ser descoberto dinamicamente através do UDDI.
+        -->
+        <wsdl:port name="RegistoFaturaPort" binding="tns:RegistoFaturaServiceSoapBinding">
+            <soap:address location="http://localhost:8080/registofatura-ws/endpoint" />
+        </wsdl:port>
+    </wsdl:service>
+
+</wsdl:definitions>

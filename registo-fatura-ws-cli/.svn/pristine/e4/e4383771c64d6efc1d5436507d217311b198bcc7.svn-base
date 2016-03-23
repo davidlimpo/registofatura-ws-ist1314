@@ -1,0 +1,68 @@
+Projecto de Sistemas Distribuídos
+
+Primeira entrega - 2014-04-11 - 20h
+
+Grupo de SD 24
+
+Repositório T-05-18-24
+
+David Limpo 70630 david.limpo30@gmail.com
+Francisco Pedreira 71033 pedreira.francisco@gmail.com
+Rui Santos 71042 rddsantos@gmail.com
+
+-------------------------------------------------------------------------------
+
+Serviço RegistoFatura
+
+Instruções de instalação para Windows
+
+[1] Iniciar servidores
+
+JUDDI:
+> startup
+
+
+[2] Criar directoria de trabalho
+
+cd temp
+mkdir SD
+cd SD
+
+
+[3] Obter versão entregue
+
+svn co svn+ssh://ist171033@sigma.ist.utl.pt/afs/ist.utl.pt/groups/leic-es/svn/T-05-15-24/registofatura-ws/tags/R_1 registofatura-ws
+svn co svn+ssh://ist171033@sigma.ist.utl.pt/afs/ist.utl.pt/groups/leic-es/svn/T-05-15-24/registofatura-ws-cli/tags/R_1_cli registofatura-ws-cli
+
+
+[4] MySQL
+cd registofatura-ws
+
+Alterar build.xml na linha 48 e redifinir password para aceder à BD.
+
+[5] Construir e executar servidor
+
+cd registofatura-ws
+ant clean build db-clean db-build run
+
+
+[6] Construir cliente
+
+[Abrir outra linha de comandos]
+
+cd registofatura-ws-cli
+ant clean build run
+
+
+-------------------------------------------------------------------------------
+
+Instruções de teste:
+(Como verificar que todas as funcionalidades estão a funcionar correctamente)
+
+
+[1] Ao executar o run no cliente como feito anteriormente, são testadas todas as respostas 
+	possiveis (incluindo os casos de erro) nos serviços disponiveis.
+
+
+-------------------------------------------------------------------------------
+FIM
